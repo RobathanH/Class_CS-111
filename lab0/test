@@ -1,0 +1,25 @@
+#!/bin/sh
+
+echo "\n1st test: no options used" | ./lab0
+echo "exit with code: $?"
+
+echo "\n2nd test: --input" > input.txt
+./lab0 --input=input.txt
+echo "exit with code: $?"
+
+echo "\n3rd test: --output" | ./lab0 --output=test.txt
+cat test.txt
+echo "exit with code: $?"
+
+echo "\n"
+echo "4th test: --segfault" | ./lab0 --segfault
+echo "exit with code: $?"
+
+echo "\n5th test: --catch" | ./lab0 --catch
+echo "exit with code: $?"
+
+echo "\n"
+echo "6th test: --catch --segfault" | ./lab0 --catch --segfault
+echo "exit with code: $?"
+
+rm input.txt test.txt

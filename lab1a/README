@@ -1,0 +1,9 @@
+NAME: Robathan Harries
+EMAIL: r0b@ucla.edu
+ID: 904836501
+SLIPDAYS: 0
+
+FILES:
+-lab1a.c = Source file
+-Makefile = a makefile
+-README = this file

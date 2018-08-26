@@ -1,0 +1,14 @@
+NAME: Robathan Harries
+ID: 904836501
+EMAIL: r0b@ucla.edu
+SLIPDAYS: 0
+
+
+FILES:
+-ext2_fs.h: The given header file, which provides the structure of the ext2 file system data organizatiosn
+
+-lab3a.c: The source file for the project. Parses through a file system image file passed in as a command line argument, and outputs a csv formatted table
+
+-Makefile: The makefile for this project. Provides the following make options: all, lab3a, dist, clean
+
+-README: This file that you're reading right now.

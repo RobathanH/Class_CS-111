@@ -1,0 +1,60 @@
+NAME: Robathan Harries
+EMAIL: r0b@ucla.edu
+ID: 904836501
+SLIPDAYS: 0
+
+
+FILES:
+-lab2b_*.png: Required gnuplots of various tests
+-lab2b_list.csv: Record of last 'make test'
+-lab2_list.c: Main source file
+-SortedList.h: Header file for the SortedList linked list object
+-SortedList.c: Source file for the SortedList linked list object
+-list_graph.gp: The gnuplot script for creating lab2b_*.png from lab2b_list.csv
+-list_test.sh: Bash script for running all test cases and storing them in lab2b_list.csv
+-Makefile: The makefile for this project. Includes 'profile', 'tests', 'graphs', 'dist', and 'clean' options
+-README: This file
+-profile.out: The file which stores profiling output from 'make profile'. For unknown reasons, profile.out always contains a duplicate instruction-by-instruction profile.
+
+
+QUESTIONS:
+
+2.3.1: CPU time in the basic list implementation
+-Where do you believe most of the CPU time is spent in the 1 and 2-thread list tests?
+Most time is spent in the list adjustment functions defined in SortedList.c.
+
+-Why do you believe these to be the most expensive parts of the code?
+This is because with only 1 or 2 threads, there is very little contention for locks/mutexes, and so lock checks will pass quickly, leaving the rest of CPU time to be spent actually performing list operations.
+
+-Where do you believe most of the CPU time is being spent in the high-thread spin-lock tests?
+Most CPU time in high-thread spin-lock tests is wasted on threads which are waiting for a spin-lock to free up. In these cases, the waiting threads are still scheduled, so they waste CPU cycles while they wait for the thread with the lock to be scheduled again.
+
+-Where do you believe most of the CPU time is being spent in the high-thread mutex tests?
+Since with mutexes threads are blocked when they try to grab a locked mutex, most CPU cycles will be spent on context switches, since they're very expensive. However, if the list length is very long, most CPU time may still go to list operations, especially searching through the list.
+
+2.3.2: Execution Profiling
+-Where (what lines of code) are consuming most of the CPU time when the spin-lock version of the list exerciser is run with a large number of threads?
+The vast majority of CPU cycles go to spin-lock checks according to gperftool.
+
+-Why does this operation become so expensive with large numbers of threads? 
+Since spin-locks don't block waiting threads, waiting threads will spend all of their scheduled CPU cycles on spin-lock checks. With a large number of threads, contention for the spin-lock increases and the proportion of threads which are busy waiting for the lock at any one time will increase.
+
+2.3.3: Mutex wait time
+-Why does the average lock-wait time rise so dramatically with the number of contending threads?
+Locked instructions take up a significant proportion of all thread instructions, and as we increase the number of threads, the chances of two threads being in a locked portion at the same time goes up. As the number of threads increases further, we get convoy-like behavior as threads form a large waiting queue, and have to wait for each thread to do its list operation sequentially.
+
+-Why does the completion time per operation rise (less dramatically) with the number of contending threads?
+With high contention, threads form large queues waiting for mutexes, and must perform the locked operations sequentially, which eliminates many of the benefits of parallelism. This is one reason why completion time per operation would increase. The other is that with more threads, the number of context switches goes up. Context switches are included in completion time (obviously) but not in the number of operations, so completion time per operation also increases just by virtue of increasing threads.
+
+-How is it possible for the wait time per operation to go up faster (or higher) than the completion time per operation?
+The measured wait time for one thread (while waiting for a particular lock) can overlap with the wait times for other threads in the same lock queue. Since completion time counts the overall time for the whole program and operation time counts the time for each individual thread, these overlapping wait periods cause wait time to increase much faster.
+
+2.3.4: Performance of partitioned lists
+-Explain the change in performance of the synchronized methods as a function of the number of lists.
+Splitting the main list into smaller lists also splits the main locks into separate smaller locks, decreasing the chance of contention and decreasing the size of the lists. Both of these factors increase the performance of the overall program by decreasing resource conflicts and decreasing list search, insert and length function times.
+
+-Should the throughput continue increasing as the number of lists is further increased? If not, explain why not.
+The throughput depends mainly on the maximum number of threads the CPU can run simultaneously. Increasing the number of lists can't increase that, so there is an absolute limit on throughput. The number of lists only increases throughput by decreasing list size and contention chance, both of which have a hard minimum value (0 for both). Thus, as you get closer to these minimums, you get diminishing returns when increasing the number of lists.
+
+-It seems reasonable to suggest the throughput of an N-way partitioned list should be equivalent to the throughput of a single list with fewer (1/N) threads. Does this appear to be true in the above curves? If not, explain why not.
+No. Even with more threads, the partitioned list seems to perform better than the 'equivalent' single list. The list size (for each sub-list) should be about equal with each method, so the performance difference is due to the contention chance being lower with partitioned lists. This is due to the combinational properties of having multiple independent locks. The chance for two threads to contend for the same specific sub-lock is lower than the chance for two threads (out of less threads overall) contending for the same main-lock.

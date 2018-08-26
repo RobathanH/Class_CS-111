@@ -1,0 +1,40 @@
+NAME: Robathan Harries
+EMAIL: rob@igecko.com
+ID: 904836501
+SLIPDAYS: 0
+
+Included Files in tarball:
+-lab0.c (source code in C)
+-Makefile
+-test (an executable which the makefile uses for the smoke check)
+-correct.txt (the correct output of test, which makefile uses for the smoke check)
+-README (this file)
+-backtrace.png
+-breakpoint.png
+
+
+
+Smoke Test:
+-The smoke test runs a few basic tests to make sure that the source code is at least largely correct.
+-To do this, the makefile runs the executable test, which produces specific output for each test.
+-The makefile then compares this output to correct.txt, which has the correct output for the executable.
+
+-IMPORTANT: if 'make check' outputs nothing, then the program passes the smoke test.
+-If the program doesn't pass the smoke test, 'make check' will produce an error and show the difference between correct and incorrect outputs.
+
+-The tests: ('make check' tests each of these sets of options for lab0)
+--no options
+-- '--input'
+-- '--output'
+-- '--segfault'
+-- '--catch'
+-- '--catch --segfault'
+
+
+
+IMPORTANT NOTE: Since the Project Spec doesn't completely specify this, I assume that the --catch 
+option DOES NOT automatically cause a segfault. As such, for --catch to do anything, the --segfault
+option must also be applied.
+However, if I am wrong and --catch should automatically cause and handle a segfault, the change can
+be made in my code simply by deleting one character. Namely, one needs to delete a leading comment
+symbol which is flagged in my source code.

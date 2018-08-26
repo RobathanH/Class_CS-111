@@ -1,0 +1,11 @@
+NAME: Robathan Harres
+EMAIL: r0b@ucla.edu
+ID: 904836501
+SLIPDAYS: 0
+
+FILES:
+-lab4b.c = the source file for this project
+-Makefile = the makefile for this project
+-README = this file
+-test.txt = A very simple input txt file for the smoke test. It simply runs through all the input commands, including OFF at the end
+

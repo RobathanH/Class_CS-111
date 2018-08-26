@@ -1,0 +1,10 @@
+NAME: Robathan Harries
+ID: 904836501
+EMAIL: r0b@ucla.edu
+SLIPDAYS: 0
+
+FILES:
+-lab3b.py - python program which audits blocks, inodes, and directories for corruption
+-start_script.sh - the script which the makefile copies to create the executable lab3b
+-Makefile - the makefile for this project, supports these options: all, lab3b, dist, clean
+-README - this file

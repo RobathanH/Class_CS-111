@@ -1,0 +1,20 @@
+
+1st test: no options used
+exit with code: 0
+
+2nd test: --input
+exit with code: 0
+
+3rd test: --output
+exit with code: 0
+
+
+Segmentation fault (core dumped)
+exit with code: 139
+
+5th test: --catch
+exit with code: 0
+
+
+Segmentation fault correctly handled.
+exit with code: 4

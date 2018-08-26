@@ -1,0 +1,273 @@
+Total: 418 samples
+     381  91.1%  91.1%      417  99.8% threadHandler
+      24   5.7%  96.9%       24   5.7% strerror_l
+       7   1.7%  98.6%       21   5.0% SortedList_lookup
+       4   1.0%  99.5%       14   3.3% SortedList_insert
+       1   0.2%  99.8%        1   0.2% _init
+       1   0.2% 100.0%        1   0.2% pthread_join
+       0   0.0% 100.0%        1   0.2% 0x00007fda4b459940
+       0   0.0% 100.0%        1   0.2% __libc_start_main
+       0   0.0% 100.0%        1   0.2% _start
+       0   0.0% 100.0%      417  99.8% clone
+       0   0.0% 100.0%        1   0.2% main
+       0   0.0% 100.0%      417  99.8% start_thread
+ROUTINE ====================== threadHandler in /home/rob/Desktop/cs_111/lab2b/lab2_list.c
+   381    417 Total samples (flat / cumulative)
+     .      .  264:     *lockTime += totalTime;
+     .      .  265:   
+     .      .  266:   return total;
+     .      .  267: }
+     .      .  268: 
+---
+     .      .  269: void *threadHandler(void *args) {
+     .      .  270:   struct threadArgs *newArgs = (struct threadArgs *) args;
+     .      .  271: 
+     .      .  272:   int i;
+     .      .  273: 
+     .      .  274:   struct timespec before, after, total;
+     .      .  275:   total.tv_sec = 0;
+     .      .  276:   total.tv_nsec = 0;
+     .      .  277:   
+     .      .  278:   if (newArgs->syncOpt == 'm') {
+     .      .  279:     //Insert Elements
+     .      .  280:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  281:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  282:       
+     .      .  283:       clock_gettime(CLOCK_REALTIME, &before);
+     .      .  284:       pthread_mutex_lock(&mutex[index]);
+     .      .  285:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  286:       addTimeDif(&before, &after, &total);
+     .      .  287:       
+     .      .  288:       SortedList_insert(&(newArgs->heads[index]), &(newArgs->elementArr[i]));
+     .      .  289:       pthread_mutex_unlock(&mutex[index]);
+     .      .  290:     }
+     .      .  291: 
+     .      .  292:     // get list length - synchronization is handled inside getTotalLength 
+     .      .  293:     if (-1 == getTotalLength(newArgs->heads, newArgs->listNum, newArgs->syncOpt, &total.tv_nsec)) {
+     .      .  294:       corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  295:     }
+     .      .  296:       
+     .      .  297:     // Delete Elements
+     .      .  298:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  299:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  300:       
+     .      .  301:       //Lookup element
+     .      .  302:       clock_gettime(CLOCK_REALTIME, &before);
+     .      .  303:       pthread_mutex_lock(&mutex[index]);
+     .      .  304:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  305:       addTimeDif(&before, &after, &total);
+     .      .  306:       
+     .      .  307:       SortedListElement_t *target = SortedList_lookup(&(newArgs->heads[index]), newArgs->elementArr[i].key);
+     .      .  308:       if (target == NULL) {
+     .      .  309: 	corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  310:       }
+     .      .  311: 
+     .      .  312:       //Delete target
+     .      .  313:       if (1 == SortedList_delete(target)) {
+     .      .  314: 	corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  315:       }
+     .      .  316:       pthread_mutex_unlock(&mutex[index]);
+     .      .  317:     }
+     .      .  318:   }
+     .      .  319: 
+     .      .  320:   else if (newArgs->syncOpt == 's') {
+     .      .  321:     //Insert Elements
+     .      .  322:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  323:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  324:       
+     .      .  325:       clock_gettime(CLOCK_REALTIME, &before);
+   186    186  326:       while (__sync_lock_test_and_set(&lock[index], 1));
+     .      .  327:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  328:       addTimeDif(&before, &after, &total);
+     .      .  329:       
+     .     14  330:       SortedList_insert(&(newArgs->heads[index]), &(newArgs->elementArr[i]));
+     .      .  331: 
+     .      .  332:       __sync_lock_release(&lock[index]);
+     .      .  333:     }
+     .      .  334: 
+     .      .  335:     // get list length - synchronization handled in getTotalLength()
+     .      .  336:     if (-1 == getTotalLength(newArgs->heads, newArgs->listNum, newArgs->syncOpt, &total.tv_nsec)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  337: 
+     .      .  338:     // Delete Elements
+     .      .  339:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  340:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  341:       
+     .      .  342:       //Lookup element
+     .      .  343:       clock_gettime(CLOCK_REALTIME, &before);
+   195    195  344:       while (__sync_lock_test_and_set(&lock[index], 1));
+     .      .  345:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  346:       addTimeDif(&before, &after, &total);
+     .      .  347:       
+     .     22  348:       SortedListElement_t *target = SortedList_lookup(&(newArgs->heads[index]), newArgs->elementArr[i].key);
+     .      .  349:       if (target == NULL) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  350: 
+     .      .  351:       //Delete target
+     .      .  352:       if (1 == SortedList_delete(target)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  353:       __sync_lock_release(&lock[index]);
+     .      .  354:     }
+     .      .  355:   }
+     .      .  356: 
+     .      .  357:   else {
+     .      .  358:     //Insert Elements
+     .      .  359:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  360:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  361:       
+     .      .  362:       SortedList_insert(&(newArgs->heads[index]), &(newArgs->elementArr[i]));
+     .      .  363:     }
+     .      .  364: 
+     .      .  365:     // get list length
+     .      .  366:     if (-1 == getTotalLength(newArgs->heads, newArgs->listNum, newArgs->syncOpt, NULL)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  367:     
+     .      .  368:     // Delete Elements
+     .      .  369:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  370:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  371:       
+     .      .  372:       //Lookup element
+     .      .  373:       SortedListElement_t *target = SortedList_lookup(&(newArgs->heads[index]), newArgs->elementArr[i].key);
+     .      .  374:       if (target == NULL) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  375:       
+     .      .  376:       //Delete target
+     .      .  377:       if (1 == SortedList_delete(target)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  378:     }
+     .      .  379:   }
+     .      .  380: 
+     .      .  381:   *(newArgs->waitTimePtr) = total.tv_nsec + 1e9 * total.tv_sec;
+     .      .  382:   
+     .      .  383:   return NULL;
+     .      .  384: }
+---
+     .      .  385: 
+     .      .  386: int main(int argc, char **argv) {
+     .      .  387: 
+     .      .  388:   //Adjustable Constants
+     .      .  389:   int keyLen = 20;//Number of chars reserved for each key string (including null-terminator)
+ROUTINE ====================== threadHandler in /home/rob/Desktop/cs_111/lab2b/lab2_list.c
+   381    417 Total samples (flat / cumulative)
+     .      .  264:     *lockTime += totalTime;
+     .      .  265:   
+     .      .  266:   return total;
+     .      .  267: }
+     .      .  268: 
+---
+     .      .  269: void *threadHandler(void *args) {
+     .      .  270:   struct threadArgs *newArgs = (struct threadArgs *) args;
+     .      .  271: 
+     .      .  272:   int i;
+     .      .  273: 
+     .      .  274:   struct timespec before, after, total;
+     .      .  275:   total.tv_sec = 0;
+     .      .  276:   total.tv_nsec = 0;
+     .      .  277:   
+     .      .  278:   if (newArgs->syncOpt == 'm') {
+     .      .  279:     //Insert Elements
+     .      .  280:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  281:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  282:       
+     .      .  283:       clock_gettime(CLOCK_REALTIME, &before);
+     .      .  284:       pthread_mutex_lock(&mutex[index]);
+     .      .  285:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  286:       addTimeDif(&before, &after, &total);
+     .      .  287:       
+     .      .  288:       SortedList_insert(&(newArgs->heads[index]), &(newArgs->elementArr[i]));
+     .      .  289:       pthread_mutex_unlock(&mutex[index]);
+     .      .  290:     }
+     .      .  291: 
+     .      .  292:     // get list length - synchronization is handled inside getTotalLength 
+     .      .  293:     if (-1 == getTotalLength(newArgs->heads, newArgs->listNum, newArgs->syncOpt, &total.tv_nsec)) {
+     .      .  294:       corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  295:     }
+     .      .  296:       
+     .      .  297:     // Delete Elements
+     .      .  298:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  299:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  300:       
+     .      .  301:       //Lookup element
+     .      .  302:       clock_gettime(CLOCK_REALTIME, &before);
+     .      .  303:       pthread_mutex_lock(&mutex[index]);
+     .      .  304:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  305:       addTimeDif(&before, &after, &total);
+     .      .  306:       
+     .      .  307:       SortedListElement_t *target = SortedList_lookup(&(newArgs->heads[index]), newArgs->elementArr[i].key);
+     .      .  308:       if (target == NULL) {
+     .      .  309: 	corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  310:       }
+     .      .  311: 
+     .      .  312:       //Delete target
+     .      .  313:       if (1 == SortedList_delete(target)) {
+     .      .  314: 	corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  315:       }
+     .      .  316:       pthread_mutex_unlock(&mutex[index]);
+     .      .  317:     }
+     .      .  318:   }
+     .      .  319: 
+     .      .  320:   else if (newArgs->syncOpt == 's') {
+     .      .  321:     //Insert Elements
+     .      .  322:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  323:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  324:       
+     .      .  325:       clock_gettime(CLOCK_REALTIME, &before);
+   186    186  326:       while (__sync_lock_test_and_set(&lock[index], 1));
+     .      .  327:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  328:       addTimeDif(&before, &after, &total);
+     .      .  329:       
+     .     14  330:       SortedList_insert(&(newArgs->heads[index]), &(newArgs->elementArr[i]));
+     .      .  331: 
+     .      .  332:       __sync_lock_release(&lock[index]);
+     .      .  333:     }
+     .      .  334: 
+     .      .  335:     // get list length - synchronization handled in getTotalLength()
+     .      .  336:     if (-1 == getTotalLength(newArgs->heads, newArgs->listNum, newArgs->syncOpt, &total.tv_nsec)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  337: 
+     .      .  338:     // Delete Elements
+     .      .  339:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  340:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  341:       
+     .      .  342:       //Lookup element
+     .      .  343:       clock_gettime(CLOCK_REALTIME, &before);
+   195    195  344:       while (__sync_lock_test_and_set(&lock[index], 1));
+     .      .  345:       clock_gettime(CLOCK_REALTIME, &after);
+     .      .  346:       addTimeDif(&before, &after, &total);
+     .      .  347:       
+     .     22  348:       SortedListElement_t *target = SortedList_lookup(&(newArgs->heads[index]), newArgs->elementArr[i].key);
+     .      .  349:       if (target == NULL) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  350: 
+     .      .  351:       //Delete target
+     .      .  352:       if (1 == SortedList_delete(target)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  353:       __sync_lock_release(&lock[index]);
+     .      .  354:     }
+     .      .  355:   }
+     .      .  356: 
+     .      .  357:   else {
+     .      .  358:     //Insert Elements
+     .      .  359:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  360:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  361:       
+     .      .  362:       SortedList_insert(&(newArgs->heads[index]), &(newArgs->elementArr[i]));
+     .      .  363:     }
+     .      .  364: 
+     .      .  365:     // get list length
+     .      .  366:     if (-1 == getTotalLength(newArgs->heads, newArgs->listNum, newArgs->syncOpt, NULL)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  367:     
+     .      .  368:     // Delete Elements
+     .      .  369:     for (i = 0; i < newArgs->arrLen; i++) {
+     .      .  370:       int index = listIndex(newArgs->elementArr[i].key, newArgs->listNum);
+     .      .  371:       
+     .      .  372:       //Lookup element
+     .      .  373:       SortedListElement_t *target = SortedList_lookup(&(newArgs->heads[index]), newArgs->elementArr[i].key);
+     .      .  374:       if (target == NULL) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  375:       
+     .      .  376:       //Delete target
+     .      .  377:       if (1 == SortedList_delete(target)) corruptedList(newArgs->elementArrStart, newArgs->threadIDs, newArgs->keyArrStart, newArgs->args, newArgs->waitTimeStart, newArgs->mutexStart, newArgs->lockStart, newArgs->heads);
+     .      .  378:     }
+     .      .  379:   }
+     .      .  380: 
+     .      .  381:   *(newArgs->waitTimePtr) = total.tv_nsec + 1e9 * total.tv_sec;
+     .      .  382:   
+     .      .  383:   return NULL;
+     .      .  384: }
+---
+     .      .  385: 
+     .      .  386: int main(int argc, char **argv) {
+     .      .  387: 
+     .      .  388:   //Adjustable Constants
+     .      .  389:   int keyLen = 20;//Number of chars reserved for each key string (including null-terminator)

@@ -1,0 +1,10 @@
+NAME: Robathan Harries
+EMAIL: r0b@ucla.edu
+ID: 904836501
+SLIPDAYS: 0
+
+FILES:
+README - this file
+Makefile - self-explanatory
+lab1b-server.c - source file for server program
+lab1b-client.c - source file for client program
