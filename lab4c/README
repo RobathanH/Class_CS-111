@@ -1,0 +1,11 @@
+NAME: Robathan Harries
+ID: 904836501
+EMAIL: r0b@ucla.edu
+SLIPDAYS: 0
+
+FILES:
+-lab4c_tcp.c: source file for unencrypted communication with the server
+-lab4c_tls.c: source file for ssl encrypted communication with the server
+-README: this file
+-Makefile: the makefile for this project. Supports the following options: all, lab4c_tcp, lab4c_tls, dist, clean.
+

@@ -1,0 +1,16 @@
+NAME: Robathan Harries
+ID: 904836501
+EMAIL: r0b@ucla.edu
+SLIPDAYS: 0
+
+SSH Addresses:
+-usb = 192.168.7.2
+-wifi = 192.168.43.196
+
+MAC Address for wlan0: 2c:f7:f1:06:6e:57
+
+The Beaglebone green has two numbers on the side:
+S/N: BBGW17100687
+MAC: 2CF7F1066E57
+
+
