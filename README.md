@@ -1,4 +1,4 @@
-# Class_CS111
+# Class_CS-111
 UCLA Operating Systems class in Summer 2018 with Dr Reiher.
 
 This is for personal reference purposes only. If you're currently in Reiher's CS 111 class, I would strongly advise against copying this code.
